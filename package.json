@@ -1,0 +1,35 @@
+{
+  "name": "nestcrm-backend",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun src/server.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.9"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.772.0",
+    "@aws-sdk/client-ec2": "^3.772.0",
+    "@aws-sdk/client-elastic-load-balancing-v2": "^3.772.0",
+    "@aws-sdk/client-iam": "^3.772.0",
+    "@aws-sdk/client-route-53": "^3.772.0",
+    "@aws-sdk/client-secrets-manager": "^3.772.0",
+    "@aws-sdk/lib-dynamodb": "^3.772.0",
+    "@types/cookie-parser": "^1.4.8",
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "elysia": "^1.2.25",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

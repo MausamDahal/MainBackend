@@ -1,36 +1,37 @@
 import { TenantRepository } from "../../domain/repositories/TenantRepository";
 import { SubscriptionRepository } from "../../domain/repositories/SubscriptionRepository";
+import { SubscriptionStatus } from "../../domain/entities/Subscription";
 
 export class SubscriptionUseCase {
     constructor(
         private tenantRepo: TenantRepository,
         private subscriptionRepo: SubscriptionRepository
-    ) { }
+    ) {}
 
-    async checkSubscriptionStatus(subdomain: string): Promise<any> {
+    async checkSubscriptionStatus(subdomain: string): Promise<SubscriptionStatus> {
         const tenant = await this.tenantRepo.findBySubdomain(subdomain);
         if (!tenant) {
-            return { valid: false, reason: "Tenant not found" };
+            return { valid: false, plan: "", status: "not_found", expiresAt: "" };
         }
 
-        const subscriptions = await this.subscriptionRepo.findByTenantID(tenant.ID);
-        const sub = subscriptions[0];
-        if (!sub) {
-            return { valid: false, reason: "No subscription found" };
+        const [subscription] = await this.subscriptionRepo.findByTenantID(tenant.ID);
+        if (!subscription) {
+            return { valid: false, plan: "", status: "not_subscribed", expiresAt: "" };
         }
 
         const now = Date.now();
-        const trialEndTime = new Date(sub.CurrentPeriodStart).getTime() + sub.TrialDays * 86400000;
+        const trialEnd = new Date(subscription.CurrentPeriodStart).getTime() +
+                         subscription.TrialDays * 86400000;
 
-        const valid = (sub.Status === "active" || sub.Status === "trialing") &&
-            !sub.CancelAtPeriodEnd &&
-            (!sub.CanceledAt || new Date(sub.CanceledAt).getTime() > now);
+        const isActive = (subscription.Status === "active" || subscription.Status === "trialing") &&
+                         !subscription.CancelAtPeriodEnd &&
+                         (!subscription.CanceledAt || new Date(subscription.CanceledAt).getTime() > now);
 
         return {
-            valid,
-            plan: sub.PlanID,
-            status: sub.Status,
-            expiresAt: new Date(trialEndTime).toISOString()
+            valid: isActive,
+            plan: subscription.PlanID,
+            status: subscription.Status,
+            expiresAt: new Date(trialEnd).toISOString()
         };
     }
 }

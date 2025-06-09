@@ -1,11 +1,9 @@
-// ProvisionEC2.ts
 import {
     EC2Client,
     RunInstancesCommand,
     waitUntilInstanceRunning,
     DescribeInstancesCommand,
 } from "@aws-sdk/client-ec2";
-
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -20,18 +18,16 @@ const ec2 = new EC2Client({ region, credentials });
 export class ProvisionEC2 {
     private static readonly instanceProfileName = "TenantEC2Role";
 
-    static async launchInstance(subdomain: string) {
+    static async launchInstance(subdomain: string): Promise<{ instanceId: string; publicIp: string }> {
         try {
-            const command = new RunInstancesCommand({
+            const launchCommand = new RunInstancesCommand({
                 ImageId: "ami-0d0f28110d16ee7d6",
                 InstanceType: "t2.micro",
                 MinCount: 1,
                 MaxCount: 1,
                 SubnetId: "subnet-09ba46adbd977b569",
                 SecurityGroupIds: ["sg-0f89eae7985996979"],
-                IamInstanceProfile: {
-                    Name: this.instanceProfileName,
-                },
+                IamInstanceProfile: { Name: this.instanceProfileName },
                 TagSpecifications: [
                     {
                         ResourceType: "instance",
@@ -42,54 +38,51 @@ export class ProvisionEC2 {
                     },
                 ],
                 UserData: Buffer.from(`#!/bin/bash
-                    # Install Node.js 18 using NodeSource
                     curl -sL https://rpm.nodesource.com/setup_18.x | sudo bash -
                     sudo yum install -y nodejs git unzip
 
-                    # Add Yarn repo and install it
                     curl -sS https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
                     sudo yum install -y yarn
 
-                    # Clone the backend and install dependencies
                     cd /home/ec2-user
                     git clone https://github.com/WellingtonDevBR/NestCRM-Dashboard-Backend.git
                     cd NestCRM-Dashboard-Backend
                     yarn install
 
-                    # Install PM2 and run the app
                     sudo npm install -g pm2
                     pm2 start yarn --interpreter bash --name my-server -- dev
                     pm2 save
 
-                    # Set PM2 to restart on reboot
                     pm2 startup systemd -u ec2-user --hp /home/ec2-user
                     sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
                     pm2 save
                 `).toString("base64"),
             });
 
-            const result = await ec2.send(command);
+            const result = await ec2.send(launchCommand);
             const instanceId = result.Instances?.[0]?.InstanceId;
-            if (!instanceId) throw new Error("Failed to launch EC2 instance");
+            if (!instanceId) {
+                throw new Error("EC2 instance was not created: no InstanceId returned");
+            }
 
-
+            // Wait until instance is fully running
             await waitUntilInstanceRunning(
                 { client: ec2, maxWaitTime: 60 },
                 { InstanceIds: [instanceId] }
             );
 
-            const describe = await ec2.send(
-                new DescribeInstancesCommand({ InstanceIds: [instanceId] })
-            );
-            const publicIp =
-                describe.Reservations?.[0]?.Instances?.[0]?.PublicIpAddress;
+            // Fetch instance public IP address
+            const describeCommand = new DescribeInstancesCommand({ InstanceIds: [instanceId] });
+            const describeResult = await ec2.send(describeCommand);
+            const publicIp = describeResult.Reservations?.[0]?.Instances?.[0]?.PublicIpAddress;
 
-            if (!publicIp) throw new Error("Instance running but no public IP");
-
+            if (!publicIp) {
+                throw new Error(`Instance ${instanceId} is running but has no public IP address assigned`);
+            }
 
             return { instanceId, publicIp };
         } catch (error) {
-            console.error(" EC2 Provisioning Failed:", error);
+            console.error("EC2 Provisioning Failed:", error);
             throw error;
         }
     }

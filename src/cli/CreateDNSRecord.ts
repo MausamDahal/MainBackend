@@ -14,7 +14,7 @@ const HOSTED_ZONE_ID = process.env.AWS_ROUTE53_ZONE_ID!;
 
 export class CreateDNSRecord {
     static async addSubdomain(subdomain: string, publicIp: string) {
-        const domainName = `${subdomain}.nestcrm.com.au.`;
+        const domainName = `${subdomain}.mausamcrm.site.`;
 
 
 
@@ -27,7 +27,7 @@ export class CreateDNSRecord {
                     {
                         Action: "UPSERT",
                         ResourceRecordSet: {
-                            Name: domainName, // eg. acmecorp.nestcrm.com.au.
+                            Name: domainName, // eg. acmecorp.mausamcrm.site.
                             Type: "CNAME", // 👈 CNAME for subdomains
                             TTL: 300,
                             ResourceRecords: [{ Value: ALB_DNS_NAME }],

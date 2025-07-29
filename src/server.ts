@@ -13,7 +13,7 @@ app.use(cookieParser());
 
 app.use(cors({
     origin: (origin, callback) => {
-        const allowedOrigins = [/\.nestcrm\.com\.au$/, 'https://nestcrm.com.au', 'https://www.nestcrm.com.au'];
+        const allowedOrigins = [/\.nestcrm\.com\.au$/, 'https://mausamcrm.site', 'https://www.mausamcrm.site'];
         if (!origin || allowedOrigins.some(o => typeof o === 'string' ? o === origin : o.test(origin))) {
             callback(null, true);
         } else {
@@ -26,11 +26,11 @@ app.use(cors({
 app.use("/api/tenants", tenantRoutes);
 
 app.post('/api/logout', (req: Request, res: Response) => {
-    res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "https://nestcrm.com.au");
+    res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "https://mausamcrm.site");
     res.setHeader("Access-Control-Allow-Credentials", "true");
 
     res.cookie("token", "", {
-        domain: ".nestcrm.com.au",
+        domain: ".mausamcrm.site",
         path: "/",
         httpOnly: true,
         secure: true,
@@ -40,13 +40,14 @@ app.post('/api/logout', (req: Request, res: Response) => {
 
     // 🧼 Clear __vercel_toolbar too
     res.cookie("__vercel_toolbar", "", {
-        domain: "nestcrm.com.au",
+        domain: "mausamcrm.site",
         path: "/",
         expires: new Date(0),
     });
 
     res.status(200).json({ message: "✅ Logged out + toolbar cleared" });
 });
+
 
 app.get("/api/validate", (req: Request, res: Response) => {
     const token = req.cookies.token;

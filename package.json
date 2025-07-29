@@ -30,6 +30,7 @@
     "dotenv": "^16.4.7",
     "elysia": "^1.2.25",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "stripe": "^18.2.1"
   }
 }

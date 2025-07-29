@@ -10,14 +10,14 @@ It powers:
 - API for token validation and subscription status check
 
 This backend is **shared by all tenants** and hosted at:  
-`https://nestcrm.com.au/api/*`
+`https://mausamcrm.site/api/*`
 
 ---
 
 ## Key Features
 
 - Multi-tenant provisioning (dynamic subdomain generation)
-- Secure JWT-based login with `.nestcrm.com.au` cookie support
+- Secure JWT-based login with `.mausamcrm.site` cookie support
 - Stripe integration (trial setup, plan selection, metadata storage)
 - AWS EC2 + Route53 automation (via SDK)
 - Token validation + logout + subscription sync API

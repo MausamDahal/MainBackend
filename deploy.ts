@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const ec2 = new EC2Client({
-  region: "us-east-2",
+  region: "us-east-1",
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
@@ -20,8 +20,8 @@ export class ProvisionEC2 {
   static async launchInstance(subdomain: string) {
     try {
       const command = new RunInstancesCommand({
-        ImageId: "ami-0d0f28110d16ee7d6",
-        InstanceType: "t2.micro",
+        ImageId: "ami-056e072f0efa3977a",
+        InstanceType: "t3a.micro",
         MinCount: 1,
         MaxCount: 1,
         SubnetId: "subnet-09ba46adbd977b569",
@@ -55,7 +55,7 @@ export class ProvisionEC2 {
           nohup bun run src/server.ts > output.log 2>&1 &
 
           # Optional: configure AWS CLI (manual placeholder)
-          # echo -e "${process.env.AWS_ACCESS_KEY_ID!}\\n${process.env.AWS_SECRET_ACCESS_KEY!}\\nus-east-2\\njson" | aws configure
+          # echo -e "${process.env.AWS_ACCESS_KEY_ID!}\\n${process.env.AWS_SECRET_ACCESS_KEY!}\\nus-east-1\\njson" | aws configure
         `).toString("base64"),
       });
 

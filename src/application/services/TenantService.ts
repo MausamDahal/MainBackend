@@ -10,7 +10,7 @@ export class TenantService {
             companyName: data.companyName,
             email: data.email,
             subdomain: data.subdomain,
-            domain: `${data.subdomain}.nestcrm.com.au`,
+            domain: `${data.subdomain}.mausamcrm.site`,
             status: "active",
             createdAt: new Date().toISOString(),
         });

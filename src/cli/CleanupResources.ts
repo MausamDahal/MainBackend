@@ -50,7 +50,7 @@ export class CleanupResources {
     }
 
     static async deleteDNSRecord(subdomain: string) {
-        const domainName = `${subdomain}.nestcrm.com.au.`;
+        const domainName = `${subdomain}.mausamcrm.site.`;
         try {
 
             await route53.send(new ChangeResourceRecordSetsCommand({

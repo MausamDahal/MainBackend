@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import { ProvisionEC2 } from "../../cli/ProvisionEC2";
 import { CreateTargetGroupAndListenerRule } from "../../cli/CreateTargetGroupAndListenerRule";
+import { CreateDNSRecord } from "../../cli/CreateDNSRecord";
 import { CleanupResources } from "../../cli/CleanupResources";
 import jwt from "jsonwebtoken";
 import { createTablesForTenant } from "../../cli/CreateTenantTables";
@@ -83,18 +84,19 @@ export class TenantUseCase {
         };
     }) {
 
+        console.log(firstName, lastName, companyName, email, password, subdomain, domain, planId, subscription);
 
         if (!companyName || !email || !password) {
-            throw new Error(" Missing required fields");
+            throw new Error("Missing required fields");
         }
 
         const existingTenant = await tenantRepo.findByEmail(email);
         if (existingTenant) throw new Error(" Tenant with this email already exists.");
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        domain = `${subdomain}.nestcrm.com.au`;
-        subdomain = subdomain.toLowerCase().replace(/\s+/g, "");
         const tenantId = uuidv4();
+        subdomain = companyName.toLowerCase().replace(/\s+/g, "");
+        domain = `${subdomain}.mausamcrm.site`;
 
         let instanceId: string | null = null;
         let targetGroupArn: string | null = null;
@@ -118,28 +120,10 @@ export class TenantUseCase {
                 CreatedAt: now
             };
 
-            await tenantRepo.create(newTenant);
-            await subscriptionRepo.create({
-                ID: subscriptionId,
-                TenantID: tenantId,
-                StripeCustomerID: subscription.stripeCustomerId,
-                StripeSubscriptionID: subscription.stripeSubscriptionId,
-                PlanID: subscription.planId,
-                Currency: subscription.currency,
-                Interval: subscription.interval,
-                Amount: subscription.amount,
-                TrialDays: subscription.trialDays,
-                Status: subscription.status,
-                StartDate: now,
-                CurrentPeriodStart: now,
-                CurrentPeriodEnd: subscription.trialEndsAt,
-                TrialEndDate: subscription.trialEndsAt,
-                CancelAtPeriodEnd: false,
-                CanceledAt: null,
-                CreatedAt: now,
-                UpdatedAt: now
-            });
+           
 
+            await tenantRepo.create(newTenant);
+       
             await createTablesForTenant(subdomain);
 
             const ec2Instance = await ProvisionEC2.launchInstance(subdomain);
@@ -151,6 +135,9 @@ export class TenantUseCase {
             );
             targetGroupArn = listenerResources!.targetGroupArn;
             listenerRuleArn = listenerResources!.listenerRuleArn;
+
+            // Create DNS record for the subdomain
+            // await CreateDNSRecord.addSubdomain(subdomain, ec2Instance.publicIp);
 
             const token = jwt.sign(
                 { tenantId, subdomain, email },
@@ -169,11 +156,13 @@ export class TenantUseCase {
                 },
             };
         } catch (error) {
+            console.error(error);
             console.error(" Provisioning failed. Rolling back...");
 
             if (instanceId) await CleanupResources.terminateEC2(instanceId);
             if (targetGroupArn) await CleanupResources.deleteTargetGroup(targetGroupArn);
             if (listenerRuleArn) await CleanupResources.deleteListenerRule(listenerRuleArn);
+            await CleanupResources.deleteDNSRecord(subdomain);
             await CleanupResources.deleteTenantTables(subdomain);
             await CleanupResources.deleteTenantRecord(tenantId);
 

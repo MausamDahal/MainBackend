@@ -4,10 +4,12 @@ import { TenantUseCase } from "../../application/usecases/TenantUseCase";
 export class TenantController {
     static async signUp(req: Request, res: Response) {
         try {
-            const response = await TenantUseCase.signUp(req.body);
+ // Support both GET (req.query) and POST (req.body)
+            const data = Object.keys(req.body).length ? req.body : req.query;
+            const response = await TenantUseCase.signUp(data as any);
             res
                 .cookie("token", response.token, {
-                    domain: ".nestcrm.com.au",
+                    domain: ".mausamcrm.site",
                     httpOnly: true,
                     sameSite: "none",
                     secure: true,
@@ -28,7 +30,7 @@ export class TenantController {
             const response = await TenantUseCase.login(req.body);
             res
                 .cookie("token", response.token, {
-                    domain: ".nestcrm.com.au",
+                    domain: ".mausamcrm.site",
                     httpOnly: true,
                     sameSite: "none",
                     secure: true,

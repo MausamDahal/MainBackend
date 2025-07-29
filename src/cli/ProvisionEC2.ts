@@ -7,7 +7,7 @@ import {
 import dotenv from "dotenv";
 dotenv.config();
 
-const region = "us-east-2";
+const region = "us-east-1";
 const credentials = {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
@@ -21,13 +21,12 @@ export class ProvisionEC2 {
     static async launchInstance(subdomain: string): Promise<{ instanceId: string; publicIp: string }> {
         try {
             const launchCommand = new RunInstancesCommand({
-                ImageId: "ami-0d0f28110d16ee7d6",
-                InstanceType: "t2.micro",
+                ImageId: "ami-056e072f0efa3977a", 
+                InstanceType: "t3a.small",
                 MinCount: 1,
                 MaxCount: 1,
-                SubnetId: "subnet-09ba46adbd977b569",
-                SecurityGroupIds: ["sg-0f89eae7985996979"],
-                IamInstanceProfile: { Name: this.instanceProfileName },
+                SubnetId: "subnet-033b3dda967aabd66",
+                SecurityGroupIds: ["sg-0132bcc244a7bb9ca"],
                 TagSpecifications: [
                     {
                         ResourceType: "instance",
@@ -38,21 +37,27 @@ export class ProvisionEC2 {
                     },
                 ],
                 UserData: Buffer.from(`#!/bin/bash
+                    # Update system and install Node.js 18
+                    sudo yum update -y
                     curl -sL https://rpm.nodesource.com/setup_18.x | sudo bash -
                     sudo yum install -y nodejs git unzip
 
+                    # Install Yarn
                     curl -sS https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
                     sudo yum install -y yarn
 
+                    # Clone and setup application
                     cd /home/ec2-user
-                    git clone https://github.com/WellingtonDevBR/NestCRM-Dashboard-Backend.git
+                    git clone https://github.com/MausamDahal/CrmDashboardbackend.git
                     cd NestCRM-Dashboard-Backend
                     yarn install
 
+                    # Install and configure PM2
                     sudo npm install -g pm2
                     pm2 start yarn --interpreter bash --name my-server -- dev
                     pm2 save
 
+                    # Setup PM2 to start on boot
                     pm2 startup systemd -u ec2-user --hp /home/ec2-user
                     sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
                     pm2 save
